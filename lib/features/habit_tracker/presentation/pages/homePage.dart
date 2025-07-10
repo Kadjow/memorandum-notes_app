@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:habit_tracker/core/services/auth_service.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../../../../injection_container.dart';
 import '../bloc/habit/habit_bloc.dart';
@@ -7,8 +8,6 @@ import '../bloc/habit/habit_event.dart';
 import '../bloc/habit/habit_state.dart';
 import 'day_detailPage.dart';
 
-/// Tela principal exibindo o calendário e permitindo navegar
-/// para o detalhe de um dia selecionado.
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
 
@@ -23,7 +22,6 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    // Dispara o carregamento de hábitos
     context.read<HabitBloc>().add(const LoadHabits());
     _selectedDay = _focusedDay;
   }
@@ -52,7 +50,10 @@ class _HomePageState extends State<HomePage> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => DayDetailPage(date: selected),
+                    builder: (_) => BlocProvider.value(
+                      value: context.read<HabitBloc>(),
+                      child: DayDetailPage(date: selected),
+                    ),
                   ),
                 );
               },
@@ -68,9 +69,7 @@ class _HomePageState extends State<HomePage> {
                       itemCount: state.habits.length,
                       itemBuilder: (context, index) {
                         final habit = state.habits[index];
-                        return ListTile(
-                          title: Text(habit.name),
-                        );
+                        return ListTile(title: Text(habit.name));
                       },
                     );
                   } else if (state is HabitError) {
@@ -86,9 +85,7 @@ class _HomePageState extends State<HomePage> {
       drawer: Drawer(
         child: ListView(
           children: [
-            const DrawerHeader(
-              child: Text('Menu'),
-            ),
+            const DrawerHeader(child: Text('Menu')),
             ListTile(
               leading: const Icon(Icons.home),
               title: const Text('Home'),
@@ -97,8 +94,9 @@ class _HomePageState extends State<HomePage> {
             ListTile(
               leading: const Icon(Icons.logout),
               title: const Text('Logout'),
-              onTap: () {
-                // TODO: chamar logout do AuthService
+              onTap: () async {
+                Navigator.pop(context); 
+                await sl<AuthService>().signOut();
               },
             ),
           ],

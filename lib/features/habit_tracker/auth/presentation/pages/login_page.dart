@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:habit_tracker/core/services/auth_service.dart';
+import 'package:habit_tracker/features/habit_tracker/presentation/pages/homePage.dart';
 import 'package:habit_tracker/injection_container.dart';
 import 'package:lottie/lottie.dart';
 
@@ -36,6 +37,8 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  final _userController = TextEditingController();
+  final _passController = TextEditingController();
   final FocusNode _userFocus = FocusNode();
   final FocusNode _passFocus = FocusNode();
 
@@ -48,6 +51,8 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   void dispose() {
+    _userController.dispose();
+    _passController.dispose();
     _userFocus.dispose();
     _passFocus.dispose();
     super.dispose();
@@ -57,11 +62,23 @@ class _LoginPageState extends State<LoginPage> {
     final user = await sl<AuthService>().signInWithGoogle();
     if (user != null) {
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => const Scaffold(
-            body: Center(child: Text('Home')),
-          ),
-        ),
+        MaterialPageRoute(builder: (_) => const HomePage()),
+      );
+    }
+  }
+
+  Future<void> _loginAsAdmin() async {
+    final username = _userController.text.trim();
+    final password = _passController.text;
+    final ok = await sl<AuthService>()
+        .signWithCredentials(username, password);
+    if (ok) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const HomePage()),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Usuário ou senha inválidos')),
       );
     }
   }
@@ -78,13 +95,12 @@ class _LoginPageState extends State<LoginPage> {
             child: Opacity(
               opacity: 0.3,
               child: Lottie.asset(
-                'lib/assets/animations/animation_sky.json', 
+                'lib/assets/animations/animation_sky.json',
                 fit: BoxFit.cover,
                 repeat: true,
               ),
             ),
           ),
-
           Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(vertical: 40),
@@ -92,7 +108,8 @@ class _LoginPageState extends State<LoginPage> {
                 width: width,
                 padding: const EdgeInsets.all(36),
                 decoration: BoxDecoration(
-                  color: const Color.fromARGB(255, 20, 24, 37).withOpacity(0.5),
+                  color: const Color.fromARGB(255, 20, 24, 37)
+                      .withOpacity(0.5),
                   borderRadius: BorderRadius.circular(15),
                   boxShadow: [
                     BoxShadow(
@@ -121,17 +138,22 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     const SizedBox(height: 32),
                     _FocusNeumorphicField(
+                      controller: _userController,
                       hint: 'Username',
                       focusNode: _userFocus,
                     ),
                     const SizedBox(height: 24),
                     _FocusNeumorphicField(
+                      controller: _passController,
                       hint: 'Password',
                       obscure: true,
                       focusNode: _passFocus,
                     ),
                     const SizedBox(height: 32),
-                    _neumorphicButton(label: 'Login', onTap: () {}),
+                    _neumorphicButton(
+                      label: 'Login',
+                      onTap: _loginAsAdmin,
+                    ),
                     const SizedBox(height: 20),
                     GestureDetector(
                       onTap: () {},
@@ -184,7 +206,10 @@ Widget _googleButton({required VoidCallback onTap}) {
         children: [
           SvgPicture.string(_googleSvg, height: 24, width: 24),
           const SizedBox(width: 12),
-          const Text('Login with Google', style: TextStyle(color: Colors.black)),
+          const Text(
+            'Login with Google',
+            style: TextStyle(color: Colors.black),
+          ),
         ],
       ),
     ),
@@ -218,18 +243,23 @@ Widget _neumorphicButton({
       child: Text(
         label,
         textAlign: TextAlign.center,
-        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     ),
   );
 }
 
 class _FocusNeumorphicField extends StatelessWidget {
+  final TextEditingController controller;
   final String hint;
   final bool obscure;
   final FocusNode focusNode;
 
   const _FocusNeumorphicField({
+    required this.controller,
     required this.hint,
     this.obscure = false,
     required this.focusNode,
@@ -271,8 +301,10 @@ class _FocusNeumorphicField extends StatelessWidget {
                 ),
               ],
       ),
-      transform: hasFocus ? (Matrix4.identity()..scale(1.02)) : Matrix4.identity(),
+      transform:
+          hasFocus ? (Matrix4.identity()..scale(1.02)) : Matrix4.identity(),
       child: TextField(
+        controller: controller,
         focusNode: focusNode,
         obscureText: obscure,
         style: const TextStyle(color: Colors.white),
@@ -280,7 +312,10 @@ class _FocusNeumorphicField extends StatelessWidget {
           hintText: hint,
           hintStyle: const TextStyle(color: Colors.grey),
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 16,
+          ),
         ),
       ),
     );

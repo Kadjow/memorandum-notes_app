@@ -19,6 +19,10 @@ class AuthService {
     return userCred.user;
   }
 
+  Future<bool> signWithCredentials(String username, String password) async {
+    return username == 'admin' && password == 'admin123';
+  }
+
   Future<void> signOut() async {
     await _auth.signOut();
     await _googleSignIn.signOut();
